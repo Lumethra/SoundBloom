@@ -1,103 +1,237 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Sound, SavedMix } from "@/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SoundControls } from "@/components/SoundControls";
+import { SoundDisplay } from "@/components/SoundDisplay";
+import { LibraryAndMixes } from "@/components/LibraryAndMixes";
+
+function Header() {
+  return (
+    <header className="mb-8 text-center">
+      <h1 className="text-5xl md:text-6xl font-bold mb-2 gradient-title">
+        SoundBloom
+      </h1>
+      <p className="text-muted-text">
+        Create your own ambient soundscapes
+      </p>
+    </header>
+  );
+}
+
+function EmptyDropZone() {
+  return (
+    <div className="flex flex-col items-center justify-center h-60 text-muted-text empty-dropzone rounded-lg">
+      <p>Drag or Add sounds from the library to start creating</p>
+    </div>
+  );
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeSounds, setActiveSounds] = useState<Sound[]>([]);
+  const [savedMixes, setSavedMixes] = useState<SavedMix[]>([]);
+  const [useTimelineView, setUseTimelineView] = useState(true);
+  const [masterVolume, setMasterVolume] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [useRandomVariants, setUseRandomVariants] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    const currentTheme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+    setTheme(currentTheme);
+
+    const handleThemeChange = (e: CustomEvent<{ theme: 'light' | 'dark' }>) => {
+      setTheme(e.detail.theme);
+    };
+
+    document.addEventListener('themechange', handleThemeChange as EventListener);
+    return () => document.removeEventListener('themechange', handleThemeChange as EventListener);
+  }, []);
+
+  // Load saved mixes from localStorage
+  useEffect(() => {
+    const savedMixesData = localStorage.getItem("soundbloom-mixes");
+    if (savedMixesData) {
+      try {
+        setSavedMixes(JSON.parse(savedMixesData));
+      } catch (e) {
+        console.error("Failed to parse saved mixes:", e);
+      }
+    }
+  }, []);
+
+  const handleAddSound = (sound: Sound) => {
+    const baseName = sound.name
+      .split(" ")
+      .filter(part => !part.includes("#"))
+      .join(" ");
+
+    const soundExists = activeSounds.some(s => {
+      const existingBaseName = s.name
+        .split(" ")
+        .filter(part => !part.includes("#"))
+        .join(" ");
+      return existingBaseName === baseName;
+    });
+
+    if (!soundExists) {
+      setActiveSounds([...activeSounds, sound]);
+    } else {
+      console.log(`Sound "${baseName}" is already in your mix`);
+    }
+  };
+
+  const handleRemoveSound = (soundId: string) => {
+    setActiveSounds(activeSounds.filter(sound => sound.id !== soundId));
+  };
+
+  const handleUpdateVolume = (soundId: string, volume: number) => {
+    setActiveSounds(
+      activeSounds.map(sound =>
+        sound.id === soundId ? { ...sound, volume } : sound
+      )
+    );
+  };
+
+  const handleSaveMix = (name: string, id?: string) => {
+    if (id) {
+      // Edit existing mix
+      const updatedMixes = savedMixes.map(mix => {
+        if (mix.id === id) {
+          return { ...mix, name, sounds: activeSounds };
+        }
+        return mix;
+      });
+      setSavedMixes(updatedMixes);
+      localStorage.setItem("soundbloom-mixes", JSON.stringify(updatedMixes));
+    } else {
+      // Create new mix
+      const newMix = {
+        id: Date.now().toString(),
+        name,
+        sounds: activeSounds
+      };
+      const updatedMixes = [...savedMixes, newMix];
+      setSavedMixes(updatedMixes);
+      localStorage.setItem("soundbloom-mixes", JSON.stringify(updatedMixes));
+    }
+  };
+
+  const handleDeleteMix = (mixId: string) => {
+    const updatedMixes = savedMixes.filter(mix => mix.id !== mixId);
+    setSavedMixes(updatedMixes);
+    localStorage.setItem("soundbloom-mixes", JSON.stringify(updatedMixes));
+  };
+
+  const handleLoadMix = (mixId: string) => {
+    const mix = savedMixes.find(m => m.id === mixId);
+    if (mix) {
+      setActiveSounds(mix.sounds);
+    }
+  };
+
+  const handleMasterVolumeChange = (volume: number) => {
+    setMasterVolume(volume);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const soundData = e.dataTransfer.getData("sound");
+      if (soundData) {
+        const sound = JSON.parse(soundData);
+        handleAddSound(sound);
+      }
+    } catch (err) {
+      console.error("Error handling drop:", err);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleMasterPlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  // Handle random variants cleanup
+  useEffect(() => {
+    if (useRandomVariants === true && activeSounds.length > 0) {
+      const soundGroups = new Map();
+
+      activeSounds.forEach(sound => {
+        const baseName = sound.name
+          .split(" ")
+          .filter(part => !part.includes("#") && isNaN(Number(part)))
+          .join(" ");
+
+        if (!soundGroups.has(baseName)) {
+          soundGroups.set(baseName, []);
+        }
+        soundGroups.get(baseName).push(sound);
+      });
+
+      let uniqueSounds: Sound[] = [];
+      soundGroups.forEach(group => {
+        if (group.length > 0) {
+          uniqueSounds.push(group[0]);
+        }
+      });
+
+      if (uniqueSounds.length < activeSounds.length) {
+        console.log("Reducing from", activeSounds.length, "to", uniqueSounds.length, "sounds");
+        setActiveSounds(uniqueSounds);
+      }
+    }
+  }, [useRandomVariants, activeSounds]);
+
+  return (
+    <div className="container mx-auto p-4 md:p-8">
+      <Header />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <LibraryAndMixes
+          onAddSound={handleAddSound}
+          activeSounds={activeSounds}
+          useRandomVariants={useRandomVariants}
+          setUseRandomVariants={setUseRandomVariants}
+        />
+
+        <div
+          className="lg:col-span-2 card rounded-xl p-4"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <SoundControls
+            useTimelineView={useTimelineView}
+            onToggleView={() => setUseTimelineView(!useTimelineView)}
+            onSaveMix={handleSaveMix}
+            onLoadMix={handleLoadMix}
+            onDeleteMix={handleDeleteMix}
+            savedMixes={savedMixes}
+          />
+
+          {activeSounds.length === 0 ? (
+            <EmptyDropZone />
+          ) : (
+            <SoundDisplay
+              sounds={activeSounds}
+              masterVolume={masterVolume}
+              isPlaying={isPlaying}
+              useTimelineView={useTimelineView}
+              useRandomVariants={useRandomVariants}
+              onMasterVolumeChange={handleMasterVolumeChange}
+              onPlayPauseToggle={handleMasterPlayPause}
+              onRemove={handleRemoveSound}
+              onVolumeChange={handleUpdateVolume}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <ThemeToggle />
     </div>
   );
 }

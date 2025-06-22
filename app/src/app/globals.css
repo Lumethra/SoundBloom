@@ -1,26 +1,396 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #4361ee;
+  --primary-dark: #3a56d4;
+  --secondary: #7209b7;
+  --secondary-dark: #6200a0;
+  --accent: #4cc9f0;
+  --accent-light: #72efdd;
+
+  --light-bg: #f0f7ff;
+  --light-card: #ffffff;
+  --light-text: #1e2a49;
+
+  --dark-bg: #0a1128;
+  --dark-card: #16213e;
+  --dark-text: #f8f9fa;
+
+  --font-sans: var(--font-geist-sans, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, monospace);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: var(--dark-bg);
+  --foreground: var(--dark-text);
+  --card-bg: var(--dark-card);
+  --border-color: rgba(67, 97, 238, 0.15);
+  --card-shadow: 0 4px 12px rgba(67, 97, 238, 0.1);
+  --slider-bg: #d0e1fd;
+  --slider-thumb: var(--primary);
+  --muted-text: #4d638c;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.light {
+  --background: var(--light-bg);
+  --foreground: var(--light-text);
+  --card-bg: var(--light-card);
+  --border-color: rgba(76, 201, 240, 0.3);
+  --card-shadow: 0 4px 12px rgba(76, 201, 240, 0.15);
+  --slider-bg: #d1e6ff;
+  --slider-thumb: var(--primary);
+  --muted-text: #64748b;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  background-image: linear-gradient(to bottom right,
+      rgba(67, 97, 238, 0.03) 0%,
+      rgba(76, 201, 240, 0.03) 100%);
+  background-attachment: fixed;
+}
+
+.gradient-title {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 10px rgba(67, 97, 238, 0.2);
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(5px);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--slider-bg);
+  border-radius: 5px;
+}
+
+input[type="range"]:not(:disabled)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--slider-thumb);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(67, 97, 238, 0.3);
+}
+
+input[type="range"]:not(:disabled)::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--slider-thumb);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 5px rgba(67, 97, 238, 0.3);
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #94a3b8;
+  border-radius: 50%;
+  cursor: default;
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #94a3b8;
+  border-radius: 50%;
+  cursor: default;
+  border: none;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.light input[type="range"]:disabled {
+  background: #e5e7eb;
+  opacity: 0.5;
+}
+
+.category-container::-webkit-scrollbar {
+  display: none;
+}
+
+.category-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.has-overflow::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 20px;
+  background: linear-gradient(to right, transparent, rgba(67, 97, 238, 0.15));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.light .has-overflow::after {
+  background: linear-gradient(to right, transparent, rgba(76, 201, 240, 0.25));
+}
+
+.has-overflow.overflow-active::after {
+  opacity: 1;
+}
+
+.category-dropdown {
+  border-radius: 0.75rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.category-dropdown button {
+  padding: 0.5rem 1rem;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.category-dropdown button:hover {
+  background-color: rgba(67, 97, 238, 0.1);
+}
+
+.light .category-dropdown button:hover {
+  background-color: rgba(76, 201, 240, 0.2);
+}
+
+.category-dropdown button.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.light .category-dropdown button.active {
+  background-color: var(--accent);
+  color: var(--dark-bg);
+}
+
+.category-dropdown button:first-child {
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+
+.category-dropdown button:last-child {
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  transition: all 0.2s;
+  border: none;
+  box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(67, 97, 238, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%);
+  color: white;
+  transition: all 0.2s;
+  border: none;
+  box-shadow: 0 2px 5px rgba(114, 9, 183, 0.3);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(114, 9, 183, 0.4);
+}
+
+.category-pill {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(67, 97, 238, 0.2);
+}
+
+.category-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(67, 97, 238, 0.3);
+}
+
+.category-pill.inactive {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+}
+
+.light .category-pill.inactive {
+  background: rgba(76, 201, 240, 0.15);
+  color: var(--primary-dark);
+}
+
+.sound-item {
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.sound-item:hover {
+  border-color: var(--border-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(67, 97, 238, 0.1);
+}
+
+.light .sound-item {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(76, 201, 240, 0.1);
+}
+
+.light .sound-item:hover {
+  border-color: rgba(76, 201, 240, 0.3);
+  box-shadow: 0 4px 8px rgba(76, 201, 240, 0.15);
+  background-color: #ffffff;
+}
+
+.play-button {
+  background: linear-gradient(45deg, var(--accent) 0%, var(--primary) 100%);
+  color: white;
+}
+
+.pause-button {
+  background: #94a3b8;
+}
+
+.light .play-button {
+  background: linear-gradient(90deg, #4361ee 0%, #4cc9f0 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px #4cc9f033;
+}
+
+.light .pause-button {
+  /* Use a gradient similar to .light .play-button for consistency */
+  background: linear-gradient(90deg, #4361ee 0%, #4cc9f0 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px #4cc9f033;
+}
+
+.master-control {
+  background: linear-gradient(to right, rgba(67, 97, 238, 0.05), rgba(76, 201, 240, 0.1));
+  border-radius: 1rem;
+}
+
+.light .master-control {
+  background: linear-gradient(to right, rgba(67, 97, 238, 0.08), rgba(76, 201, 240, 0.12));
+  border: 1px solid rgba(76, 201, 240, 0.2);
+}
+
+.empty-dropzone {
+  border: 2px dashed rgba(67, 97, 238, 0.3);
+  background: linear-gradient(to bottom right, rgba(67, 97, 238, 0.02), rgba(76, 201, 240, 0.05));
+}
+
+.light .empty-dropzone {
+  border: 2px dashed rgba(76, 201, 240, 0.4);
+  background: linear-gradient(to bottom right, rgba(67, 97, 238, 0.04), rgba(76, 201, 240, 0.08));
+}
+
+.theme-toggle-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--foreground);
+  box-shadow: var(--card-shadow);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(67, 97, 238, 0.15);
+}
+
+.light .theme-toggle-btn {
+  box-shadow: 0 6px 12px rgba(76, 201, 240, 0.15);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  max-height: 90vh;
+  width: 100%;
+  max-width: 500px;
+  overflow-y: auto;
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+}
+
+.light .added-tick {
+  color: #4361ee !important;
+  /* Use your primary/brand color */
+  background: #e0f2fe !important;
+  /* Subtle blue background */
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.light label[for="random-variants"],
+.light label[for="random-variants"] *,
+.light .randomize-label,
+.light .randomize-label * {
+  color: #1e293b !important;
+  text-shadow: none;
+}
+
+/* Make the remove (X) button stand out in light mode */
+.light .sound-item button[aria-label="Remove sound"] {
+  background: #f8d7da !important;
+  /* Soft red background */
+  color: #c1121f !important;
+  /* Strong red for the icon */
+  border-radius: 50%;
+  transition: background 0.2s, color 0.2s;
+}
+
+.light .sound-item button[aria-label="Remove sound"]:hover {
+  background: #f1b0b7 !important;
+  /* Slightly deeper red on hover */
+  color: #fff !important;
 }
